@@ -1,0 +1,45 @@
+# Python
+*.pyc
+*.pyo
+*.pyd
+__pycache__/
+*.sqlite3
+*.log
+
+# Django
+*.db
+*.DS_Store
+*.egg-info/
+instance/
+media/
+staticfiles/
+
+# Environments
+.env
+.env.local
+.venv/
+venv/
+env/
+env.bak/
+
+# PyCharm
+.idea/
+
+# VS Code
+.vscode/
+
+# Mac
+.DS_Store
+
+# Operating System Files
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Other
+*.pot
+*.py[cod]
+*.pyd
+*.whl
+*.egg
+

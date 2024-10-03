@@ -1,0 +1,9 @@
+
+<form action="{% url 'login' %}">
+{%  csrf_token %}
+    <label for="usuario"> Usuário
+    <input type="text" name="usuario"></label>
+
+    <label for="pwd"> Password
+    <input type="text" name="pwd"></label>
+</form>
