@@ -1,5 +1,6 @@
 from django.template import Template
 from django.views.generic import TemplateView
+from django.contrib.auth import views as auth_views
 from lavanderia import views
 """
 URL configuration for lavanderia project.
@@ -18,10 +19,14 @@ Including another URLconf
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
 from django.contrib import admin
-from django.urls import path
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', views.view_test, name='index'),
-    path('a/b/c', views.login, name='login'),
+    # path('a/b/c', views.login, name='login'),
+    # path("log", views.login, name="llogin"),
+    path("accounts/logout/", views.user_logout, name="logout"),
+    path("accounts/", include("django.contrib.auth.urls")),
+
 ]

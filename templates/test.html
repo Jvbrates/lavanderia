@@ -3,5 +3,16 @@
 {% block content %}
     Interno Página de Teste
     <a href="{% url 'index' %}"> link pra cá </a>
-    <a href="{% url 'another' %}"> link pra outro lugar </a>
+    <a href="{% url 'login' %}"> Login </a>
+
+    {# Logout precisa estar em um form #}
+    <form method="post" action="{% url 'logout' %}">
+    {% csrf_token %}
+    <button type="submit">logout</button>
+</form>
+
+     {% if user.is_authenticated %} <h2>Autenticado</h2> {{ user }}
+    {% else %}<h2> Não Autenticado</h2> {% endif %}
+
+
 {% endblock %}
