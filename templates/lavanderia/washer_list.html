@@ -1,0 +1,57 @@
+<!--
+Código gerado por ChatGPT, versão 3.5, em 2024-10-10
+-->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Lavadoras</title>
+    {#    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> <!-- Inclua seu CSS aqui -->#}
+</head>
+<body>
+<h1>Lista de Lavadoras</h1>
+
+{% if object_list %}
+    <table border="1">
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Nome</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for washer in object_list %}
+            <tr>
+                <td>{{ washer.id }}</td>
+                <td>{{ washer.name }}</td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="2">
+                <h2>Criar nova Lavadora</h2>
+                <form method="POST" action="{% url 'washer_list' %}">
+                    {% csrf_token %}
+                    {{ form.as_p }} <!-- Renderiza o formulário -->
+                    <button type="submit">Adicionar Lavadora</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+{% else %}
+    <p>Nenhuma lavadora encontrada.</p>
+{% endif %}
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+
+<a href="{% url 'login' %}">Logout</a> <!-- Link para logout, ajuste conforme necessário -->
+</body>
+</html>
