@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
-from lavanderia.models import LavanderiaUser, Washer
+from lavanderia.models import LavanderiaUser, Washer, AvaibleSlot
 
 
 class CustomUserAdmin(UserAdmin):
@@ -20,3 +20,4 @@ class CustomUserAdmin(UserAdmin):
 
 admin.site.register(LavanderiaUser, CustomUserAdmin)
 admin.site.register(Washer)
+admin.site.register(AvaibleSlot)

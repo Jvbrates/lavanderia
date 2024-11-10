@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from django.contrib.auth.models import User
+from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
 from django.contrib.auth.models import Group, Permission, AbstractUser
@@ -20,9 +23,7 @@ class Washer(models.Model):
 class AvaibleSlot(models.Model):
     start = models.DateTimeField(null=False)
     washer = models.ForeignKey('lavanderia.Washer', on_delete=models.CASCADE, null=False)
-
-    duration = models.DateTimeField(null=False)
-
+    duration = models.DurationField(null=False)
 
 class ReservedSlot(models.Model):
     slot = models.ForeignKey(AvaibleSlot, on_delete=models.CASCADE, null=False)

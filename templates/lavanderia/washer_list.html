@@ -13,36 +13,51 @@ Código gerado por ChatGPT, versão 3.5, em 2024-10-10
 <body>
 <h1>Lista de Lavadoras</h1>
 
-{% if object_list %}
-    <table border="1">
-        <thead>
+
+<table>
+    <thead>
+    <tr>
+        <th>Nome</th>
+        <th colspan="2">Ação</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for washer in object_list %}
         <tr>
-            <th>ID</th>
-            <th>Nome</th>
-        </tr>
-        </thead>
-        <tbody>
-        {% for washer in object_list %}
-            <tr>
-                <td>{{ washer.id }}</td>
-                <td>{{ washer.name }}</td>
-            </tr>
-        {% endfor %}
-        <tr>
-            <td colspan="2">
-                <h2>Criar nova Lavadora</h2>
-                <form method="POST" action="{% url 'washer_list' %}">
+            <!-- Formulário para editar o Washer -->
+            <form method="post" action="{% url 'washer_update_delete' pk=washer.id %}">
+                {% csrf_token %}
+                <td><input type="text" name="name" value="{{ washer.name }}"/></td>
+                <td>
+                    <button type="submit">Editar</button>
+                </td>
+            </form>
+
+            <!-- Formulário para excluir o Washer -->
+            <td>
+                <form method="post" action="{% url 'washer_update_delete' pk=washer.id %}">
                     {% csrf_token %}
-                    {{ form.as_p }} <!-- Renderiza o formulário -->
-                    <button type="submit">Adicionar Lavadora</button>
+                    <input type="hidden" name="_method" value="delete">
+                    <button type="submit">Excluir</button>
                 </form>
             </td>
+
+
         </tr>
-        </tbody>
-    </table>
-{% else %}
-    <p>Nenhuma lavadora encontrada.</p>
-{% endif %}
+    {% endfor %}
+        <tr>
+            <form method="POST" action="{% url 'washer_list' %}">
+                {% csrf_token %}
+                <td>{{ form.name }}<div class="error">{{ form.name.errors }}</div></td>
+
+
+                <td colspan="2"><button type="submit">Adicionar Lavadora</button></td>
+            </form>
+        </tr>
+
+    </tbody>
+</table>
+
 {% if messages %}
     <ul class="messages">
         {% for message in messages %}
@@ -52,6 +67,8 @@ Código gerado por ChatGPT, versão 3.5, em 2024-10-10
 {% endif %}
 
 
-<a href="{% url 'login' %}">Logout</a> <!-- Link para logout, ajuste conforme necessário -->
+<a href="{% url 'login' %}">Logout</a>
+
+
 </body>
 </html>

@@ -1,0 +1,68 @@
+<!--
+Código gerado por ChatGPT, versão 3.5, em 2024-10-10
+-->
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lista de Lavadoras</title>
+    {#    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> <!-- Inclua seu CSS aqui -->#}
+</head>
+<body>
+<h1>Lista de Horário</h1>
+
+{% if object_list %}
+    <table border="1">
+        <thead>
+        <tr>
+            <th>Data</th>
+            <th>Nome</th>
+            <th>Duração</th>
+            <th colspan="2">Ação</th>
+        </tr>
+        </thead>
+        <tbody>
+        {% for horario in object_list %}
+            <tr>
+                <td>{{ horario.start }}</td>
+                <td>{{ horario.washer.name }}</td>
+                <td>{{ horario.duration }}</td>
+                <td>
+                <form method="post" action="{% url 'time_update_delete' pk=horario.id %}">
+                    {% csrf_token %}
+                    <input type="hidden" name="_method" value="delete">
+                    <button type="submit">Excluir</button>
+                </form>
+                </td>
+            </tr>
+        {% endfor %}
+        <tr>
+            <td colspan="2">
+
+            </td>
+        </tr>
+        </tbody>
+    </table>
+{% else %}
+    <p>Nenhum horário encontrado.</p>
+{% endif %}
+{% if messages %}
+    <ul class="messages">
+        {% for message in messages %}
+            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+        {% endfor %}
+    </ul>
+{% endif %}
+
+<h2>Criar novo horário</h2>
+<form method="POST" action="{% url 'time_slot_list' %}">
+    {% csrf_token %}
+    {{ form.as_p }} <!-- Renderiza o formulário -->
+    <button type="submit">Adicionar Horário</button>
+</form>
+
+<a href="{% url 'login' %}">Logout</a> <!-- Link para logout, ajuste conforme necessário -->
+</body>
+</html>
