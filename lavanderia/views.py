@@ -1,3 +1,5 @@
+import datetime
+from time import strptime
 from typing import Callable
 
 from django.contrib import messages
@@ -10,8 +12,8 @@ from django.urls import reverse_lazy
 from django.views import View
 from django.views.generic import ListView, FormView, DeleteView
 
-from lavanderia.forms import WasherForm, AvaibleSlotForm
-from lavanderia.models import Washer, AvaibleSlot
+from lavanderia.forms import WasherForm, AvaibleSlotForm, ReservedSlotForm
+from lavanderia.models import Washer, AvaibleSlot, ReservedSlot
 
 
 @login_required
@@ -196,5 +198,40 @@ class AvaibleSlotView(BaseCRUDView):
     list_view = AvaibleSlotListView
     delete_view = TimeSlotDeleteView
 
-class AgendamentosView(BaseCRUDView):
+
+# Agendamentos
+
+class AgendamentoDeleteView(DeleteView):
+    model = Washer
+    success_url = reverse_lazy("agendamentos_view")
+
+
+class AgendamentoListView(ListView):
+    model = ReservedSlot
+    form_class = ReservedSlotForm
+    paginate_by = 100
+    template_name = "lavanderia/agendamento_list.html"
+
+    def get_queryset(self):
+        # Acessando os parâmetros da URL (por exemplo: ?start_date=2024-01-01)
+        start_date = self.request.GET.get('start', None)
+
+        # Se 'start_date' foi passado, converte para um objeto DateTime
+        if start_date:
+            start_date = strptime(start_date, "%Y-%m-%d")
+        else:
+            start_date = datetime.date.today()  # Se não for passado, filtra a partir da data atual
+
+        # Retorna o queryset filtrado pela data
+        return ReservedSlot.objects.filter(date__gte=start_date).order_by('date')
+
+
+class AgendamentoFormView(FormView):
     pass
+
+
+class AgendamentosView(BaseCRUDView):
+    form_view = AgendamentoFormView
+    form = ReservedSlotForm
+    list_view = AgendamentoListView
+    delete_view = AgendamentoDeleteView
