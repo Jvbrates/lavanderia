@@ -1,0 +1,45 @@
+{% extends "base/base.html" %}
+
+{% block content %}
+    <h1>Meus Agendamentos</h1>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Máquina</th>
+                <th>Data e Hora</th>
+                <th>Duração</th>
+                <th>Presença</th>
+                <th>Ação</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for reservation in reservations %}
+                <tr>
+                    <td>{{ reservation.slot.washer.name }}</td>
+                    <td>{{ reservation.slot.start|date:"d/m/Y H:i" }}</td>
+                    <td>{{ reservation.slot.duration }}</td>
+                    <td>{{ reservation.presence|yesno:"Sim,Não" }}</td>
+                    <td>
+                        <form action="{% url 'cancelar_agendamento' reservation.id %}" method="post">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger">Cancelar</button>
+                        </form>
+                    </td>
+                </tr>
+            {% empty %}
+                <tr>
+                    <td colspan="5">Nenhum agendamento encontrado.</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <!-- Mensagens de Sucesso/Erro -->
+    {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+                <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
+            {% endfor %}
+        </ul>
+    {% endif %}
+{% endblock %}

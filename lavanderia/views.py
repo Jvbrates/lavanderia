@@ -5,10 +5,11 @@ from typing import Callable
 from django.contrib import messages
 from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import UserPassesTestMixin
+from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.db.models import ObjectDoesNotExist
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
+from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, FormView, DeleteView
 
@@ -39,7 +40,7 @@ class StaffRequireBolsista(UserPassesTestMixin):
 class WasherFormView(FormView):
     model = Washer
     form_class = WasherForm
-    success_url = "/staff/washers/"
+    success_url = "/bolsista/washers/"
     template_name = "lavanderia/washer_list.html"
 
     def post(self, request, *args, **kwargs):
@@ -227,7 +228,7 @@ class AgendamentoListView(ListView):
 
 
 class AgendamentoFormView(FormView):
-    pass
+    pass  # TODO
 
 
 class AgendamentosView(BaseCRUDView):
@@ -235,3 +236,67 @@ class AgendamentosView(BaseCRUDView):
     form = ReservedSlotForm
     list_view = AgendamentoListView
     delete_view = AgendamentoDeleteView
+
+
+# Parte dos usuarios comuns
+
+class AvailableSlotListView(ListView):
+    model = AvaibleSlot
+    template_name = 'lavanderia/usuario/available_slot_list.html'  # Seu template aqui
+    context_object_name = 'available_slots'
+    paginate_by = 10  # Número de slots por página
+
+    def get_queryset(self):
+        # Pega a data e hora atual
+        current_time = timezone.now()
+
+        # Seleciona os AvaibleSlots que começam a partir do momento atual e não estão reservados
+        queryset = AvaibleSlot.objects.filter(
+            #      start__gte=current_time  # Slots com data e hora de início futura
+        ).exclude(
+            id__in=ReservedSlot.objects.values_list('slot_id', flat=True)  # Exclui slots já reservados
+        ).order_by('start')  # Ordena os slots por data de início
+
+        return queryset
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from lavanderia.models import AvaibleSlot, ReservedSlot
+
+
+@login_required
+def schedule_slot(request, pk):
+    slot = get_object_or_404(AvaibleSlot, pk=pk)
+
+    # Verifica se o slot já foi reservado
+    if ReservedSlot.objects.filter(slot=slot).exists():
+        # Redireciona ou exibe uma mensagem informando que o slot já foi reservado
+        messages.add_message(request, messages.ERROR,
+                             "Horário já agendado")
+        return redirect('horarios')
+
+    # Cria a reserva para o usuário logado
+    ReservedSlot.objects.create(slot=slot, user=request.user)
+
+    # Redireciona após agendamento (pode ser para uma página de confirmação)
+    return redirect('meus_agendamentos')
+
+
+
+class UserReservationListView(LoginRequiredMixin, ListView):
+    model = ReservedSlot
+    template_name = "lavanderia/usuario/agendamentos.html"
+    context_object_name = "reservations"
+
+    def get_queryset(self):
+        # Filtra os agendamentos do usuário logado
+        return ReservedSlot.objects.filter(user=self.request.user)
+
+class ReservationCancelView(LoginRequiredMixin, DeleteView):
+    model = ReservedSlot
+    success_url = reverse_lazy('meus_agendamentos')  # Redireciona para a lista de reservas após cancelar
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(self.request, "Agendamento cancelado com sucesso.")
+        return super().delete(request, *args, **kwargs)
