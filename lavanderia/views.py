@@ -1,5 +1,5 @@
 import datetime
-from time import strptime
+from time import strptime, mktime
 from typing import Callable
 
 from django.contrib import messages
@@ -13,7 +13,7 @@ from django.utils import timezone
 from django.views import View
 from django.views.generic import ListView, FormView, DeleteView
 
-from lavanderia.forms import WasherForm, AvaibleSlotForm, ReservedSlotForm
+from lavanderia.forms import WasherForm, AvaibleSlotForm, ReservedSlotForm, DateFilterForm
 from lavanderia.models import Washer, AvaibleSlot, ReservedSlot
 
 
@@ -265,23 +265,37 @@ from django.contrib.auth.decorators import login_required
 from lavanderia.models import AvaibleSlot, ReservedSlot
 
 
+
 @login_required
 def schedule_slot(request, pk):
     slot = get_object_or_404(AvaibleSlot, pk=pk)
 
     # Verifica se o slot já foi reservado
     if ReservedSlot.objects.filter(slot=slot).exists():
-        # Redireciona ou exibe uma mensagem informando que o slot já foi reservado
         messages.add_message(request, messages.ERROR,
                              "Horário já agendado")
+        return redirect('horarios')
+
+    # Calcula a data limite de 30 dias atrás
+    thirty_days_ago = timezone.now() - datetime.timedelta(days=30)
+
+    # Verifica se o usuário já tem dois ou mais agendamentos com presence=False nos últimos 30 dias
+    recent_absent_reservations = ReservedSlot.objects.filter(
+        user=request.user,
+        presence=False,
+        slot__start__gte=thirty_days_ago
+    ).count()
+
+    if recent_absent_reservations >= 2:
+        messages.add_message(request, messages.ERROR,
+                             "Você não pode agendar mais horários. Possui 2 ou mais faltas nos últimos 30 dias.")
         return redirect('horarios')
 
     # Cria a reserva para o usuário logado
     ReservedSlot.objects.create(slot=slot, user=request.user)
 
-    # Redireciona após agendamento (pode ser para uma página de confirmação)
+    # Redireciona após agendamento
     return redirect('meus_agendamentos')
-
 
 
 class UserReservationListView(LoginRequiredMixin, ListView):
@@ -293,6 +307,7 @@ class UserReservationListView(LoginRequiredMixin, ListView):
         # Filtra os agendamentos do usuário logado
         return ReservedSlot.objects.filter(user=self.request.user)
 
+
 class ReservationCancelView(LoginRequiredMixin, DeleteView):
     model = ReservedSlot
     success_url = reverse_lazy('meus_agendamentos')  # Redireciona para a lista de reservas após cancelar
@@ -300,3 +315,42 @@ class ReservationCancelView(LoginRequiredMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         messages.success(self.request, "Agendamento cancelado com sucesso.")
         return super().delete(request, *args, **kwargs)
+
+
+class ReservedSlotListView(ListView):
+    model = ReservedSlot
+    template_name = 'lavanderia/agendamento_list.html'
+    context_object_name = 'reservations'
+
+    def get_queryset(self):
+        # Pega a data da URL ou usa o dia atual como padrão
+        date_str = self.request.GET.get('data', None)
+        if date_str:
+            try:
+                selected_date = datetime.datetime.fromtimestamp(mktime(strptime(date_str, '%Y-%m-%d')))
+            except ValueError:
+                selected_date = timezone.localdate()
+        else:
+            selected_date = timezone.localdate()
+
+        # Retorna os agendamentos a partir da data escolhida
+        return ReservedSlot.objects.filter(
+            slot__start__date__gte=selected_date
+        ).select_related('slot', 'user')
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = DateFilterForm(self.request.GET)
+        return context
+
+    # Para alterar a presença de um agendamento
+    def post(self, request, *args, **kwargs):
+        if 'presence_toggle' in request.POST:
+            reserved_slot = get_object_or_404(ReservedSlot, id=request.POST.get('reservation_id'))
+            reserved_slot.presence = not reserved_slot.presence
+            reserved_slot.save()
+
+        elif 'delete_reservation' in request.POST:
+            reserved_slot = get_object_or_404(ReservedSlot, id=request.POST.get('reservation_id'))
+            reserved_slot.delete()
+        return redirect(self.request.path)

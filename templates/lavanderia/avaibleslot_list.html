@@ -1,16 +1,7 @@
-<!--
-Código gerado por ChatGPT, versão 3.5, em 2024-10-10
--->
+{% extends "base/base.html" %}
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Lavadoras</title>
-    {#    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> <!-- Inclua seu CSS aqui -->#}
-</head>
-<body>
+{% block content %}
+
 <h1>Lista de Horário</h1>
 
 {% if object_list %}
@@ -63,6 +54,4 @@ Código gerado por ChatGPT, versão 3.5, em 2024-10-10
     <button type="submit">Adicionar Horário</button>
 </form>
 
-<a href="{% url 'login' %}">Logout</a> <!-- Link para logout, ajuste conforme necessário -->
-</body>
-</html>
+{%  endblock %}

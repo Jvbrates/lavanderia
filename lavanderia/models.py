@@ -19,6 +19,9 @@ class LavanderiaUser(AbstractUser):
 class Washer(models.Model):
     name = models.CharField(max_length=128, null=False)
 
+    def __str__(self):
+        return self.name
+
 
 class AvaibleSlot(models.Model):
     start = models.DateTimeField(null=False)

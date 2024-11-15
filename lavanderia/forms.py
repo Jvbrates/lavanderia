@@ -100,3 +100,13 @@ class ReservedSlotForm(forms.ModelForm):
         label='Presence',
         widget=forms.CheckboxInput(attrs={'class': 'form-check-input'})  # Personaliza o widget de checkbox
     )
+
+
+# Formulário para escolher uma data
+class DateFilterForm(forms.Form):
+    data = forms.DateField(
+        label='Filtrar por data',
+        widget=forms.DateInput(attrs={'type': 'date'}),
+        required=False
+    )
+

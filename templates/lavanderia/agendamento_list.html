@@ -1,0 +1,57 @@
+{% extends 'base/base.html' %}
+
+{% block title %}Agendamentos{% endblock %}
+
+{% block content %}
+<h2>Lista de Agendamentos</h2>
+
+<!-- Formulário para filtrar por data -->
+<form method="get" class="mb-4">
+    {{ form.as_p }}
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
+
+<!-- Tabela de agendamentos -->
+<table class="table table-bordered">
+    <thead>
+        <tr>
+            <th>Data-Horário</th>
+            <th>Máquina</th>
+            <th>Duração</th>
+            <th>Usuário</th>
+            <th>Presença</th>
+            <th>Ações</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for reservation in reservations %}
+        <tr>
+            <td>{{ reservation.slot.start|date:"d/m/Y H:i" }}</td>
+            <td>{{ reservation.slot.washer.name }}</td>
+            <td>{{ reservation.slot.duration }}</td>
+            <td>{{ reservation.user.username }}</td>
+            <td>{{ reservation.presence|yesno:"Sim,Não" }}</td>
+            <td>
+                <!-- Botão para alterar a presença -->
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+                    <button type="submit" name="presence_toggle" class="btn btn-warning">Alterar Presença</button>
+                </form>
+
+                <!-- Botão para deletar o agendamento -->
+                <form method="post" style="display:inline;">
+                    {% csrf_token %}
+                    <input type="hidden" name="reservation_id" value="{{ reservation.id }}">
+                    <button type="submit" name="delete_reservation" class="btn btn-danger">Cancelar</button>
+                </form>
+            </td>
+        </tr>
+        {% empty %}
+        <tr>
+            <td colspan="6">Nenhum agendamento encontrado.</td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}
