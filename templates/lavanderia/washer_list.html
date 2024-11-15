@@ -1,20 +1,13 @@
 <!--
 Código gerado por ChatGPT, versão 3.5, em 2024-10-10
 -->
+{% extends 'base/base.html' %}
 
-<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Lista de Lavadoras</title>
-    {#    <link rel="stylesheet" href="{% static 'css/styles.css' %}"> <!-- Inclua seu CSS aqui -->#}
-</head>
-<body>
-<h1>Lista de Lavadoras</h1>
+{% block title %}Lista de Lavadoras{% endblock %}
 
+{% block content %}
 
-<table>
+<table class="table">
     <thead>
     <tr>
         <th>Nome</th>
@@ -27,9 +20,9 @@ Código gerado por ChatGPT, versão 3.5, em 2024-10-10
             <!-- Formulário para editar o Washer -->
             <form method="post" action="{% url 'washer_update_delete' pk=washer.id %}">
                 {% csrf_token %}
-                <td><input type="text" name="name" value="{{ washer.name }}"/></td>
+                <td><input  type="text" name="name" value="{{ washer.name }}"/></td>
                 <td>
-                    <button type="submit">Editar</button>
+                    <button class="btn btn-primary" type="submit">Editar</button>
                 </td>
             </form>
 
@@ -38,7 +31,7 @@ Código gerado por ChatGPT, versão 3.5, em 2024-10-10
                 <form method="post" action="{% url 'washer_update_delete' pk=washer.id %}">
                     {% csrf_token %}
                     <input type="hidden" name="_method" value="delete">
-                    <button type="submit">Excluir</button>
+                    <button class="btn btn-danger" type="submit">Excluir</button>
                 </form>
             </td>
 
@@ -51,24 +44,12 @@ Código gerado por ChatGPT, versão 3.5, em 2024-10-10
                 <td>{{ form.name }}<div class="error">{{ form.name.errors }}</div></td>
 
 
-                <td colspan="2"><button type="submit">Adicionar Lavadora</button></td>
+                <td colspan="2"><button  class="btn btn-primary" type="submit">Adicionar Lavadora</button></td>
             </form>
         </tr>
 
     </tbody>
 </table>
 
-{% if messages %}
-    <ul class="messages">
-        {% for message in messages %}
-            <li{% if message.tags %} class="{{ message.tags }}"{% endif %}>{{ message }}</li>
-        {% endfor %}
-    </ul>
-{% endif %}
 
-
-<a href="{% url 'login' %}">Logout</a>
-
-
-</body>
-</html>
+{% endblock %}

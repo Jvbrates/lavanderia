@@ -7,14 +7,16 @@ from django.contrib.auth import logout
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import UserPassesTestMixin, LoginRequiredMixin
 from django.db.models import ObjectDoesNotExist
+from django.http import HttpResponseForbidden
 from django.shortcuts import render, redirect
 from django.urls import reverse_lazy
 from django.utils import timezone
+from django.utils.timezone import now
 from django.views import View
 from django.views.generic import ListView, FormView, DeleteView
 
-from lavanderia.forms import WasherForm, AvaibleSlotForm, ReservedSlotForm, DateFilterForm
-from lavanderia.models import Washer, AvaibleSlot, ReservedSlot
+from lavanderia.forms import WasherForm, AvaibleSlotForm, ReservedSlotForm, DateFilterForm, LavanderiaUserForm
+from lavanderia.models import Washer, AvaibleSlot, ReservedSlot, LavanderiaUser
 
 
 @login_required
@@ -25,7 +27,7 @@ def view_test(request):
 @login_required
 def user_logout(request):
     logout(request)
-    return redirect("login", permanent=True)
+    return redirect("horarios", permanent=True)
 
 
 class StaffRequireBolsista(UserPassesTestMixin):
@@ -33,7 +35,16 @@ class StaffRequireBolsista(UserPassesTestMixin):
     raise_exception = True
 
     def test_func(self):
-        return self.request.user.bolsista
+        user = self.request.user
+        # Verifica se o usuário está autenticado e se é bolsista
+        return user.is_authenticated and user.bolsista
+
+    def handle_no_permission(self):
+        # Redireciona para a página de login se o usuário não está autenticado
+        if not self.request.user.is_authenticated:
+            return redirect(self.login_url)
+        # Caso contrário, gera uma exceção
+        return super().handle_no_permission()
 
 
 # WASHERS
@@ -136,7 +147,21 @@ class AvaibleSlotListView(ListView):
         self.object = []
         context = super().get_context_data(**kwargs)
         context['form'] = self.form_class()
+        context['form_data'] = DateFilterForm(self.request.GET)
+
         return context
+
+    def get_queryset(self):
+        date_str = self.request.GET.get('data', None)
+        if date_str:
+            try:
+                selected_date = datetime.datetime.fromtimestamp(mktime(strptime(date_str, '%Y-%m-%d')))
+            except ValueError:
+                selected_date = timezone.localdate()
+        else:
+            selected_date = timezone.localdate()
+
+        return AvaibleSlot.objects.filter(start__gte=selected_date);
 
 
 class BaseCRUDView(View):
@@ -248,22 +273,34 @@ class AvailableSlotListView(ListView):
 
     def get_queryset(self):
         # Pega a data e hora atual
-        current_time = timezone.now()
+        # Pega a data da URL ou usa o dia atual como padrão
+        date_str = self.request.GET.get('data', None)
+        if date_str:
+            try:
+                selected_date = datetime.datetime.fromtimestamp(mktime(strptime(date_str, '%Y-%m-%d')))
+            except ValueError:
+                selected_date = timezone.localdate()
+        else:
+            selected_date = timezone.localdate()
 
         # Seleciona os AvaibleSlots que começam a partir do momento atual e não estão reservados
         queryset = AvaibleSlot.objects.filter(
-            #      start__gte=current_time  # Slots com data e hora de início futura
+            start__gte=selected_date  # Slots com data e hora de início futura
         ).exclude(
             id__in=ReservedSlot.objects.values_list('slot_id', flat=True)  # Exclui slots já reservados
         ).order_by('start')  # Ordena os slots por data de início
 
         return queryset
 
+    def get_context_data(self, *, object_list=None, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = DateFilterForm(self.request.GET)
+        return context
+
 
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from lavanderia.models import AvaibleSlot, ReservedSlot
-
 
 
 @login_required
@@ -279,6 +316,11 @@ def schedule_slot(request, pk):
     # Calcula a data limite de 30 dias atrás
     thirty_days_ago = timezone.now() - datetime.timedelta(days=30)
 
+    if (slot.start.date() - datetime.date.today()).days >= 15:
+        messages.add_message(request, messages.ERROR,
+                             "Você não pode agendar para datas além de duas semanas.")
+        return redirect('horarios')
+
     # Verifica se o usuário já tem dois ou mais agendamentos com presence=False nos últimos 30 dias
     recent_absent_reservations = ReservedSlot.objects.filter(
         user=request.user,
@@ -289,6 +331,13 @@ def schedule_slot(request, pk):
     if recent_absent_reservations >= 2:
         messages.add_message(request, messages.ERROR,
                              "Você não pode agendar mais horários. Possui 2 ou mais faltas nos últimos 30 dias.")
+        return redirect('horarios')
+
+    next_reservatuions = ReservedSlot.objects.filter(user=request.user,
+                                                     slot__start__gte=now())
+    if next_reservatuions.count() >= 2:
+        messages.add_message(request, messages.ERROR,
+                             "Você não pode agendar mais horários. Possui 2 horarios agendados na próxima semana.")
         return redirect('horarios')
 
     # Cria a reserva para o usuário logado
@@ -305,7 +354,7 @@ class UserReservationListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self):
         # Filtra os agendamentos do usuário logado
-        return ReservedSlot.objects.filter(user=self.request.user)
+        return ReservedSlot.objects.filter(user=self.request.user, slot__start__gte=datetime.datetime.today())
 
 
 class ReservationCancelView(LoginRequiredMixin, DeleteView):
@@ -313,11 +362,20 @@ class ReservationCancelView(LoginRequiredMixin, DeleteView):
     success_url = reverse_lazy('meus_agendamentos')  # Redireciona para a lista de reservas após cancelar
 
     def delete(self, request, *args, **kwargs):
+        # Obtém a instância do agendamento
+        reservation = self.get_object()
+
+        # Verifica se o horário do slot já passou
+        if reservation.slot.start < now():
+            messages.error(self.request, "Não é possível cancelar um agendamento de data já passada.")
+            return HttpResponseForbidden("Cancelamento não permitido para datas passadas.")
+
+        # Caso esteja dentro do prazo permitido, cancela o agendamento
         messages.success(self.request, "Agendamento cancelado com sucesso.")
         return super().delete(request, *args, **kwargs)
 
 
-class ReservedSlotListView(ListView):
+class ReservedSlotListView(StaffRequireBolsista, ListView):
     model = ReservedSlot
     template_name = 'lavanderia/agendamento_list.html'
     context_object_name = 'reservations'
@@ -354,3 +412,36 @@ class ReservedSlotListView(ListView):
             reserved_slot = get_object_or_404(ReservedSlot, id=request.POST.get('reservation_id'))
             reserved_slot.delete()
         return redirect(self.request.path)
+
+
+class LavanderiaUserListView(StaffRequireBolsista, ListView):
+    model = LavanderiaUser
+    template_name = "lavanderia/users_list.html"
+    context_object_name = "users"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['form'] = LavanderiaUserForm()
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = LavanderiaUserForm(request.POST)
+        if form.is_valid():
+            # Cria o novo usuário
+            user = form.save(commit=False)
+            user.set_password(form.cleaned_data['password'])
+            user.save()
+            messages.success(request, "Usuário adicionado com sucesso!")
+        else:
+            messages.error(request, "Erro ao adicionar usuário. Verifique os campos.")
+        return redirect('user_list')  # Substitua com o nome da sua URL de listagem
+
+
+# DeleteView para excluir um usuário LavanderiaUser
+class LavanderiaUserDeleteView(StaffRequireBolsista, DeleteView):
+    model = LavanderiaUser
+    success_url = reverse_lazy('user_list')  # Substitua com o nome da sua URL de listagem
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, "Usuário excluído com sucesso.")
+        return super().delete(request, *args, **kwargs)

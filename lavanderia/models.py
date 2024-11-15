@@ -28,7 +28,9 @@ class AvaibleSlot(models.Model):
     washer = models.ForeignKey('lavanderia.Washer', on_delete=models.CASCADE, null=False)
     duration = models.DurationField(null=False)
 
+
 class ReservedSlot(models.Model):
     slot = models.ForeignKey(AvaibleSlot, on_delete=models.CASCADE, null=False)
     user = models.ForeignKey(LavanderiaUser, on_delete=models.CASCADE, null=False)
     presence = models.BooleanField(null=False, default=True)
+

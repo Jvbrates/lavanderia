@@ -2,8 +2,12 @@
 
 {% block content %}
 
-<h1>Lista de Horário</h1>
-
+<h1>Lista de Horários</h1>
+<!-- Formulário para filtrar por data -->
+<form method="get" class="mb-4">
+    {{ form_data.as_p }}
+    <button type="submit" class="btn btn-primary">Filtrar</button>
+</form>
 {% if object_list %}
     <table class="table">
         <thead>

@@ -3,7 +3,7 @@ from datetime import timedelta
 from django import forms
 from django.core.exceptions import ValidationError
 
-from lavanderia.models import Washer, AvaibleSlot, ReservedSlot
+from lavanderia.models import Washer, AvaibleSlot, ReservedSlot, LavanderiaUser
 
 
 class WasherForm(forms.ModelForm):
@@ -110,3 +110,25 @@ class DateFilterForm(forms.Form):
         required=False
     )
 
+class LavanderiaUserForm(forms.ModelForm):
+    class Meta:
+        model = LavanderiaUser
+        fields = ['username', 'email', 'password', 'bolsista', 'matricula', 'apartamento', 'telefone']
+        widgets = {
+            'password': forms.PasswordInput(attrs={'class': 'form-control'}),
+            'username': forms.TextInput(attrs={'class': 'form-control'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control'}),
+            'bolsista': forms.CheckboxInput(attrs={'class': 'form-check-input'}),
+            'matricula': forms.TextInput(attrs={'class': 'form-control'}),
+            'apartamento': forms.TextInput(attrs={'class': 'form-control'}),
+            'telefone': forms.TextInput(attrs={'class': 'form-control'}),
+        }
+        labels = {
+            'username': 'Nome de Usuário',
+            'email': 'E-mail',
+            'password': 'Senha',
+            'bolsista': 'Bolsista?',
+            'matricula': 'Matrícula',
+            'apartamento': 'Apartamento',
+            'telefone': 'Telefone',
+        }

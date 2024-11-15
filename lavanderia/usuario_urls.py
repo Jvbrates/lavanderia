@@ -3,6 +3,7 @@ from django.urls import path
 from lavanderia.views import AvailableSlotListView, UserReservationListView, ReservationCancelView, schedule_slot
 
 urlpatterns = [
+    path('', AvailableSlotListView.as_view(), name='horarios'),  # LISTA HORARIOS DISPONIVEIS
     path('horarios/', AvailableSlotListView.as_view(), name='horarios'),  # LISTA HORARIOS DISPONIVEIS
     path('horarios/<int:pk>', schedule_slot, name='schedule_slot'),  # UPDATE E DELETE
 

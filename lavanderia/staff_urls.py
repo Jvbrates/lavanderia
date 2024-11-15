@@ -1,6 +1,6 @@
 from django.urls import path
 from lavanderia.views import WasherListCreateView, AvaibleSlotView, WasherDeleteView, AgendamentosView, \
-    ReservedSlotListView
+    ReservedSlotListView, LavanderiaUserListView, LavanderiaUserDeleteView
 
 urlpatterns = [
     path('washers/', WasherListCreateView.as_view(), name='washer_list'),  # CREATE E LIST
@@ -10,4 +10,6 @@ urlpatterns = [
     path('timeslots/<int:pk>', AvaibleSlotView.as_view(), name="time_update_delete"), # UPDATE e DELETE
 
     path('agendamentos/', ReservedSlotListView.as_view(), name='reserved_slots'),
+    path('usuarios/', LavanderiaUserListView.as_view(), name='user_list'),
+    path('usuarios/<int:pk>', LavanderiaUserDeleteView.as_view(), name='user_delete'),
 ]
