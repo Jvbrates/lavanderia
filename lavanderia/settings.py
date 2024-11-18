@@ -26,7 +26,7 @@ SECRET_KEY = 'django-insecure-qv$or!6r!&-j-5c$@f%vnzp7-b4gjne*#_@r63uhqo&lo^jcef
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
+CSRF_TRUSTED_ORIGINS = ["https://lavanderia-production.up.railway.app"]
 
 # Application definition
 
@@ -37,7 +37,6 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
-    'datetimewidget',
     'lavanderia'
 ]
 
