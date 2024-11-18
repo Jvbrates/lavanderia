@@ -1,27 +1,32 @@
+{% block content %}
+<div class="container d-flex justify-content-center align-items-center" style="min-height: 80vh;">
+    <div class="card shadow-lg p-4" style="width: 100%; max-width: 400px;">
+        {% if form.errors %}
+        <div class="alert alert-danger" role="alert">
+            Seu nome de usuário e senha não correspondem. Tente novamente.
+        </div>
+        {% endif %}
 
+        {% if next %}
+            {% if user.is_authenticated %}
+            <div class="alert alert-warning" role="alert">
+                Sua conta não tem acesso a esta página. Para continuar, faça login com uma conta que tenha acesso.
+            </div>
+            {% else %}
+            <div class="alert alert-info" role="alert">
+                Por favor, faça login para acessar esta página.
+            </div>
+            {% endif %}
+        {% endif %}
 
-{% if form.errors %}
-<p>Your username and password didn't match. Please try again.</p>
-{% endif %}
-
-{% if next %}
-    {% if user.is_authenticated %}
-    <p>Your account doesn't have access to this page. To proceed,
-    please login with an account that has access.</p>
-    {% else %}
-    <p>Please login to see this page.</p>
-    {% endif %}
-{% endif %}
-
-<!-- templates/registration/login.html -->
-<h2>Log In</h2>
-<form method="post">
-  {% csrf_token %}
-  {{ form }}
-  <button type="submit">Log In</button>
-</form>
-
-
-{# Assumes you set up the password_reset view in your URLconf #}
-{% comment %}<p><a href="{% url 'password_reset' %}">Lost password?</a></p>{% endcomment %}
-
+        <h2 class="text-center mb-4">Entrar</h2>
+        <form method="post">
+            {% csrf_token %}
+            {{ form.as_p }}
+            <div class="d-grid">
+                <button type="submit" class="btn btn-primary btn-block">Entrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
